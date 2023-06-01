@@ -31,6 +31,7 @@ class _Registration():
 
         self._verbose=verbose
         self.loss=inf
+        self.loss_history = {}
 
     def set_optimizer(self, optimizer):
         self._optimizer = optimizer
@@ -43,6 +44,9 @@ class _Registration():
 
     def set_image_loss(self, loss):
         self._image_loss = loss
+    
+    def empty_loss_history(self):
+        self.loss_history = {}
 
 
 class _PairwiseRegistration(_Registration):
@@ -117,6 +121,15 @@ class PairwiseRegistration(_PairwiseRegistration):
                 print(str(loss_name) + ": " + str(loss_value.data.item()) + " ", end='', flush=True)
             print("")
 
+        # store loss history
+        if self.loss_history:
+            for loss_value, loss_name in zip(lossList, loss_names):
+                self.loss_history[loss_name].append(loss_value.data.item())
+
+        else:
+            for loss_value, loss_name in zip(lossList, loss_names):
+                self.loss_history[loss_name] = [loss_value.data.item()]
+
         # sum up all loss terms
         loss = sum(lossList)
 
@@ -178,6 +191,15 @@ class DemonsRegistraion(_Registration):
                 print(str(loss_name) + ": " + str(loss_value.data.item()) + " ", end='', flush=True)
 
             print("")
+        
+        # store loss history
+        if self.loss_history:
+            for loss_value, loss_name in zip(lossList, loss_names):
+                self.loss_history[loss_name].append(loss_value.data.item())
+
+        else:
+            for loss_value, loss_name in zip(lossList, loss_names):
+                self.loss_history[loss_name] = [loss_value.data.item()]
 
         # sum up all loss terms
         loss = sum(lossList)
