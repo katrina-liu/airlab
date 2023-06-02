@@ -32,6 +32,7 @@ class _Registration():
         self._verbose=verbose
         self.loss=inf
         self.loss_history = {}
+        self._reported_loss = None
 
     def set_optimizer(self, optimizer):
         self._optimizer = optimizer
@@ -44,6 +45,11 @@ class _Registration():
 
     def set_image_loss(self, loss):
         self._image_loss = loss
+        if not self._reported_loss:
+            self._reported_loss = loss
+
+    def set_reported_loss(self, loss):
+        self._reported_loss = loss
     
     def empty_loss_history(self):
         self.loss_history = {}
@@ -98,13 +104,18 @@ class PairwiseRegistration(_PairwiseRegistration):
         self._optimizer.zero_grad()
 
         displacement = self._transformation()
-
+        
         # compute the image loss
-        lossList = []
-        loss_names = []
-        for image_loss in self._image_loss:
-             lossList.append(image_loss(displacement))
-             loss_names.append(image_loss.name)
+        lossList = [0 for _ in self._image_loss]
+        loss_names = [ls.name for ls in self._image_loss]
+        report_loss_names = []
+        report_loss_list = []
+        for image_loss in self._reported_loss:
+             loss = image_loss(displacement)
+             report_loss_list.append(loss)
+             report_loss_names.append(image_loss.name)
+             if image_loss.name in loss_names:
+                 lossList[loss_names.index(image_loss.name)] = loss
 
         # compute the regularisation loss on the displacement
         for reg_disp in self._regulariser_displacement:
@@ -123,11 +134,11 @@ class PairwiseRegistration(_PairwiseRegistration):
 
         # store loss history
         if self.loss_history:
-            for loss_value, loss_name in zip(lossList, loss_names):
+            for loss_value, loss_name in zip(report_loss_list, report_loss_names):
                 self.loss_history[loss_name].append(loss_value.data.item())
 
         else:
-            for loss_value, loss_name in zip(lossList, loss_names):
+            for loss_value, loss_name in zip(report_loss_list, report_loss_names):
                 self.loss_history[loss_name] = [loss_value.data.item()]
 
         # sum up all loss terms
