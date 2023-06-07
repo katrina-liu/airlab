@@ -99,7 +99,6 @@ def warp_image(image, displacement):
 
     # warp image
     warped_image = F.grid_sample(image.image, displacement + grid)
-
     return iutils.Image(warped_image, image_size, image.spacing, image.origin)
 
 
@@ -135,7 +134,7 @@ def unit_displacement_to_displacement(displacement):
 
     # manipulate displacement field
     for dim in range(df.shape[-1]):
-        df[..., dim] = float(df.shape[-dim - 2] - 1) * df[..., dim] / 2.0
+        df[..., dim] = float(df.shape[-dim - 2] - 1) * ((df[..., dim] + 1) / 2.0)
 
     return displacement
 
