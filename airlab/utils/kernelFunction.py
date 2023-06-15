@@ -53,7 +53,7 @@ Create a one dimensional gaussian kernel matrix
 """
 def gaussian_kernel_1d(sigma, asTensor=False, dtype=th.float32, device='cpu'):
 
-    kernel_size = int(2*np.ceil(sigma) + 1)
+    kernel_size = int(2*np.ceil(sigma*3) + 1)
 
     x = np.linspace(-(kernel_size - 1) // 2, (kernel_size - 1) // 2, num=kernel_size)
 
@@ -284,7 +284,6 @@ def bspline_kernel(sigma, order=2, dim=1, asTensor=False, dtype=th.float32, devi
         return bspline_kernel_2d(sigma, order=order, asTensor=asTensor, dtype=dtype, device=device)
     else:
         return bspline_kernel_3d(sigma, order=order, asTensor=asTensor, dtype=dtype, device=device)
-
 
 
 

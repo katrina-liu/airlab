@@ -133,13 +133,17 @@ class PairwiseRegistration(_PairwiseRegistration):
             print("")
 
         # store loss history
+        print("Reporting ", end="", flush=True)
         if self.loss_history:
             for loss_value, loss_name in zip(report_loss_list, report_loss_names):
+                print(str(loss_name) + ": " + str(loss_value.data.item()) + " ", end='', flush=True)
                 self.loss_history[loss_name].append(loss_value.data.item())
 
         else:
             for loss_value, loss_name in zip(report_loss_list, report_loss_names):
+                print(str(loss_name) + ": " + str(loss_value.data.item()) + " ", end='', flush=True)
                 self.loss_history[loss_name] = [loss_value.data.item()]
+        print("")
 
         # sum up all loss terms
         loss = sum(lossList)
@@ -206,7 +210,10 @@ class DemonsRegistraion(_Registration):
         # store loss history
         if self.loss_history:
             for loss_value, loss_name in zip(lossList, loss_names):
+                print(str(loss_name) + ": " + str(loss_value.data.item()) + " ", end='', flush=True)
                 self.loss_history[loss_name].append(loss_value.data.item())
+            print("")
+
 
         else:
             for loss_value, loss_name in zip(lossList, loss_names):
