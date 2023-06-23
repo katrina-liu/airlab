@@ -690,7 +690,7 @@ class SSIM_EXT(_PairwiseImageLoss):
 
         self._kernel = self._kernel.to(dtype=self._dtype, device=self._device)
 
-        self._fixed_norm_image = F.instance_norm(self._fixed_image.image)
+        self._fixed_norm_image = F.batch_norm(self._fixed_image.image, th.zeros(1), th.ones(1))
         print(self._fixed_norm_image.shape)
         # covolution and pooling block 1
         self._conv_fixed_image_1 = F.conv2d(self._fixed_norm_image, self._kernel) # mean of original image
@@ -756,7 +756,7 @@ class SSIM_EXT(_PairwiseImageLoss):
         mask_4 = conv_mask_4 == 0
 
 
-        self._moving_norm_image = F.instance_norm(self._warped_moving_image)
+        self._moving_norm_image = F.batch_norm(self._warped_moving_image, th.zeros(1), th.ones(1))
         # covolution and pooling moving image
         conv_moving_image_1 = F.conv2d(self._moving_norm_image, self._kernel)
         var_moving_image_1 = F.conv2d(self._moving_norm_image.pow(2), self._kernel) \
