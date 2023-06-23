@@ -655,7 +655,7 @@ class SSIM_EXT(_PairwiseImageLoss):
 
     def __init__(self, fixed_image, moving_image, fixed_mask=None, moving_mask=None,
                  sigma=[3], dim=2, kernel_type="box", pool_kernel_size=2, alpha=1, beta=1, gamma=1, c1=0.00001, c2=0.00009,
-                 c3=0.000045, size_average=True, reduce=True, ):
+                 c3=0.000045, size_average=True, reduce=True, epsilon=1e-7):
         super(SSIM_EXT, self).__init__(fixed_image, moving_image,
                                        fixed_mask, moving_mask, size_average, reduce)
 
@@ -666,6 +666,7 @@ class SSIM_EXT(_PairwiseImageLoss):
         self._c1 = c1
         self._c2 = c2
         self._c3 = c3
+        self._epsilon = epsilon
 
         self._name = "sim_ext"
         self._kernel = None
@@ -689,9 +690,6 @@ class SSIM_EXT(_PairwiseImageLoss):
         self._kernel.unsqueeze_(0).unsqueeze_(0)
 
         self._kernel = self._kernel.to(dtype=self._dtype, device=self._device)
-
-        print(self._fixed_image.image)
-        print(self._fixed_image.image.shape)
         self._fixed_norm_image = F.batch_norm(self._fixed_image.image, th.zeros(1, device=self._device), th.ones(1, device=self._device))
         
         # covolution and pooling block 1
@@ -726,26 +724,13 @@ class SSIM_EXT(_PairwiseImageLoss):
     def calc_ssim(self, im1_mean, im1_var, im2_mean, im2_var, im12_mean, mask):
         luminance = (2*im1_mean*im2_mean+self._c1) / \
             (im1_mean.pow(2)+im2_mean.pow(2)+self._c1)
-        im12_var = th.sqrt(im1_var+1e-10)*th.sqrt(im2_var + 1e-10)
+        im12_var = th.sqrt(im1_var+self._epsilon)*th.sqrt(im2_var + self._epsilon)
         contrast = (2*im12_var+self._c2)/(im1_var+im2_var+self._c2)
         covar = im12_mean-im1_mean*im2_mean
         structure = (covar + self._c3)/(im12_var+self._c3)
         sim = luminance.pow(self._alpha) * \
             contrast.pow(self._beta) * structure.pow(self._gamma)
         value = -1.0 * th.masked_select(sim, mask)
-        print(luminance, contrast, structure, sim)
-        print(luminance.isnan().any())
-        print((im1_var<0).any(), (im2_var<0).any())
-        print(im2_var)
-        print(im2_var+1e-10)
-        print(im2_var[im2_var<0])
-        print((im2_var+1e-10).tolist())
-        print(((im2_var+1e-10)<0).any())
-        print(th.sqrt(im1_var+1e-10).isnan().any(), th.sqrt(im2_var+1e-10).isnan().any())
-        print(im12_var.isnan().any())
-        print(contrast.isnan().any())
-        print(sim.isnan().any())
-        print(value.isnan().any())
         return self.return_loss(value)
 
     def forward(self, displacement):
