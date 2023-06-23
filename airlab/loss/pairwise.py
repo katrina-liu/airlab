@@ -727,6 +727,7 @@ class SSIM_EXT(_PairwiseImageLoss):
         value = -1.0 * th.masked_select(sim, mask)
         print(luminance, contrast, structure, sim)
         print(value.mean())
+        print(th.isinf(value).any())
         return self.return_loss(value)
 
     def forward(self, displacement):
