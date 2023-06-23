@@ -690,10 +690,11 @@ class SSIM_EXT(_PairwiseImageLoss):
 
         self._kernel = self._kernel.to(dtype=self._dtype, device=self._device)
 
-
+        self._fixed_norm_image = F.batch_norm(self._fixed_image.image)
+        print(self._fixed_norm_image.shape)
         # covolution and pooling block 1
-        self._conv_fixed_image_1 = F.conv2d(self._fixed_image.image, self._kernel) # mean of original image
-        self._var_fixed_image_1 = F.conv2d(self._fixed_image.image.pow(2), self._kernel) \
+        self._conv_fixed_image_1 = F.conv2d(self._fixed_norm_image, self._kernel) # mean of original image
+        self._var_fixed_image_1 = F.conv2d(self._fixed_norm_image, self._kernel) \
             - (self._conv_fixed_image_1.pow(2)) # variance of original image
         self._pooled_image_1 = F.max_pool2d(self._conv_fixed_image_1, pool_kernel_size)
 
@@ -755,9 +756,10 @@ class SSIM_EXT(_PairwiseImageLoss):
         mask_4 = conv_mask_4 == 0
 
 
+        self._moving_norm_image = F.batch_norm(self._warped_moving_image)
         # covolution and pooling moving image
-        conv_moving_image_1 = F.conv2d(self._warped_moving_image, self._kernel)
-        var_moving_image_1 = F.conv2d(self._warped_moving_image.pow(2), self._kernel) \
+        conv_moving_image_1 = F.conv2d(self._moving_norm_image, self._kernel)
+        var_moving_image_1 = F.conv2d(self._moving_norm_image.pow(2), self._kernel) \
             - (conv_moving_image_1.pow(2)) # variance of pooled image 1
         pooled_moving_image_1 = F.max_pool2d(conv_moving_image_1, self._pooling_kernel_size)
         
@@ -777,7 +779,7 @@ class SSIM_EXT(_PairwiseImageLoss):
         
         # covariances
         mean_fixed_moving_image_1 = F.conv2d(
-            self._fixed_image.image * self._warped_moving_image, self._kernel)
+            self._fixed_norm_image * self._moving_norm_image, self._kernel)
         mean_fixed_moving_image_2 = F.conv2d(
             self._pooled_image_1 * pooled_moving_image_1, self._kernel)
         mean_fixed_moving_image_3 = F.conv2d(
@@ -794,165 +796,26 @@ class SSIM_EXT(_PairwiseImageLoss):
                               var_moving_image_1,
                               mean_fixed_moving_image_1,
                               mask_1)
+        print("loss1", loss_1)
         loss_2 = self.calc_ssim(self._conv_fixed_image_2, 
                               self._var_fixed_image_2,
                               conv_moving_image_2, 
                               var_moving_image_2,
                               mean_fixed_moving_image_2,
                               mask_2)
+        print("loss2", loss_2)
         loss_3 = self.calc_ssim(self._conv_fixed_image_3, 
                               self._var_fixed_image_3,
                               conv_moving_image_3, 
                               var_moving_image_3,
                               mean_fixed_moving_image_3,
                               mask_3)
+        print("loss3", loss_3)
         loss_4 = self.calc_ssim(self._conv_fixed_image_4, 
                               self._var_fixed_image_4,
                               conv_moving_image_4, 
                               var_moving_image_4,
                               mean_fixed_moving_image_4,
                               mask_4)
+        print("loss4", loss_4)
         return loss_1+loss_2+loss_3+loss_4
-
-
-class SSIM_EXT_1L(_PairwiseImageLoss):
-    r""" Implementation of the Structual Similarity Image Measure loss.
-
-        Args:
-                fixed_image (Image): Fixed image for the registration
-                moving_image (Image): Moving image for the registration
-                fixed_mask (Tensor): Mask for the fixed image
-                moving_mask (Tensor): Mask for the moving image
-                sigma (float): Sigma for the kernel
-                kernel_type (string): Type of kernel i.e. gaussian, box
-                alpha (float): Controls the influence of the luminance value
-                beta (float): Controls the influence of the contrast value
-                gamma (float): Controls the influence of the structure value
-                c1 (float): Numerical constant for the luminance value
-                c2 (float): Numerical constant for the contrast value
-                c3 (float): Numerical constant for the structure value
-                size_average (bool): Average loss function
-                reduce (bool): Reduce loss function to a single value
-    """
-
-    def __init__(self, fixed_image, moving_image, fixed_mask=None, moving_mask=None,
-                 sigma=[3], dim=2, kernel_type="box", pool_kernel_size=2, alpha=1, beta=1, gamma=1, c1=0.00001, c2=0.00009,
-                 c3=0.000045, size_average=True, reduce=True, ):
-        super(SSIM_EXT, self).__init__(fixed_image, moving_image,
-                                       fixed_mask, moving_mask, size_average, reduce)
-
-        self._alpha = alpha
-        self._beta = beta
-        self._gamma = gamma
-
-        self._c1 = c1
-        self._c2 = c2
-        self._c3 = c3
-
-        self._name = "sim_ext_id"
-        self._kernel = None
-        self._pooling_kernel_size = pool_kernel_size
-
-        dim = dim
-        sigma = np.array(sigma)
-
-        if sigma.size != dim:
-            sigma_app = sigma[-1]
-            while sigma.size != dim:
-                sigma = np.append(sigma, sigma_app)
-
-        if kernel_type == "box":
-            kernel_size = sigma * 2 + 1
-            self._kernel = th.ones(*kernel_size.tolist()) \
-                / float(np.product(kernel_size))
-        elif kernel_type == "gaussian":
-            self._kernel = utils.gaussian_kernel(sigma, dim, asTensor=True)
-
-        self._kernel.unsqueeze_(0).unsqueeze_(0)
-
-        self._kernel = self._kernel.to(dtype=self._dtype, device=self._device)
-
-
-        # covolution and pooling block 1
-        self._conv_fixed_image_1 = F.conv2d(self._fixed_image.image, self._kernel) # mean of original image
-        self._var_fixed_image_1 = F.conv2d(self._fixed_image.image.pow(2), self._kernel) \
-            - (self._conv_fixed_image_1.pow(2)) # variance of original image
-        self._pooled_image_1 = F.max_pool2d(self._conv_fixed_image_1, pool_kernel_size)
-
-        # covolution and pooling block 2
-        self._conv_fixed_image_2 = F.conv2d(self._pooled_image_1, self._kernel) # mean of pooled image 1
-        self._var_fixed_image_2 = F.conv2d(self._pooled_image_1.pow(2), self._kernel) \
-            - (self._conv_fixed_image_2.pow(2)) # variance of pooled image 1
-        self._pooled_image_2 = F.max_pool2d(self._conv_fixed_image_2, pool_kernel_size)
-
-
-    def calc_ssim(self, im1_mean, im1_var, im2_mean, im2_var, im12_mean, mask):
-        luminance = (2*im1_mean*im2_mean+self._c1) / \
-            (im1_mean.pow(2)+im2_mean.pow(2)+self._c1)
-        im12_var = th.sqrt(im1_var+1e-10)*th.sqrt(im2_var + 1e-10)
-        contrast = (2*im12_var+self._c2)/(im1_var+im2_var+self._c2)
-        covar = im12_mean-im1_mean*im2_mean
-        structure = (covar + self._c3)/(im12_var+self._c3)
-        sim = luminance.pow(self._alpha) * \
-            contrast.pow(self._beta) * structure.pow(self._gamma)
-        value = -1.0 * th.masked_select(sim, mask)
-        return self.return_loss(value)
-
-    def forward(self, displacement):
-        # compute displacement field
-        displacement = self._grid + displacement
-
-        # compute current mask
-        mask = super(SSIM_EXT, self).GetCurrentMask(displacement)
-        mask = ~mask
-        mask = mask.to(dtype=self._dtype, device=self._device)
-
-        self._warped_moving_image = F.grid_sample(
-            self._moving_image.image, displacement)
-
-        # mask
-        conv_mask_1 = F.conv2d(mask, self._kernel) # original image ssim mask
-        mask_1 = conv_mask_1 == 0
-        pooled_mask_1 = F.max_pool2d(conv_mask_1, self._pooling_kernel_size)
-
-        conv_mask_2 = F.conv2d(pooled_mask_1, self._kernel)
-        mask_2 = conv_mask_2 == 0
-        pooled_mask_2 = F.max_pool2d(conv_mask_2, self._pooling_kernel_size)
-
-
-
-        # covolution and pooling moving image
-        conv_moving_image_1 = F.conv2d(self._warped_moving_image, self._kernel)
-        var_moving_image_1 = F.conv2d(self._warped_moving_image.pow(2), self._kernel) \
-            - (conv_moving_image_1.pow(2)) # variance of pooled image 1
-        pooled_moving_image_1 = F.max_pool2d(conv_moving_image_1, self._pooling_kernel_size)
-        
-        conv_moving_image_2 = F.conv2d(pooled_moving_image_1, self._kernel)
-        var_moving_image_2 = F.conv2d(pooled_moving_image_1.pow(2), self._kernel) \
-            - (conv_moving_image_2.pow(2)) # variance of pooled image 2
-        pooled_moving_image_2 = F.max_pool2d(conv_moving_image_2, self._pooling_kernel_size)
-
-        
-        # covariances
-        mean_fixed_moving_image_1 = F.conv2d(
-            self._fixed_image.image * self._warped_moving_image, self._kernel)
-        mean_fixed_moving_image_2 = F.conv2d(
-            self._pooled_image_1 * pooled_moving_image_1, self._kernel)
-        
-
-        # ssim
-
-        loss_1 = self.calc_ssim(self._conv_fixed_image_1, 
-                              self._var_fixed_image_1,
-                              conv_moving_image_1, 
-                              var_moving_image_1,
-                              mean_fixed_moving_image_1,
-                              mask_1)
-        loss_2 = self.calc_ssim(self._conv_fixed_image_2, 
-                              self._var_fixed_image_2,
-                              conv_moving_image_2, 
-                              var_moving_image_2,
-                              mean_fixed_moving_image_2,
-                              mask_2)
-        
-        return loss_1+loss_2
