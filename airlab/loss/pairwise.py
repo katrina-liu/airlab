@@ -738,6 +738,8 @@ class SSIM_EXT(_PairwiseImageLoss):
         print((im1_var<0).any(), (im2_var<0).any())
         print(im2_var)
         print(im2_var+1e-10)
+        print(im2_var[im2_var<0])
+        print((im2_var+1e-10).tolist())
         print(((im2_var+1e-10)<0).any())
         print(th.sqrt(im1_var+1e-10).isnan().any(), th.sqrt(im2_var+1e-10).isnan().any())
         print(im12_var.isnan().any())
