@@ -735,6 +735,8 @@ class SSIM_EXT(_PairwiseImageLoss):
         value = -1.0 * th.masked_select(sim, mask)
         print(luminance, contrast, structure, sim)
         print(luminance.isnan().any())
+        print(im1_var.isnan().any(), im2_var.isnan().any())
+        print(im12_var.isnan().any())
         print(contrast.isnan().any())
         print(sim.isnan().any())
         print(value.isnan().any())
