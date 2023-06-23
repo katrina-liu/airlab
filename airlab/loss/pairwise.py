@@ -690,7 +690,7 @@ class SSIM_EXT(_PairwiseImageLoss):
 
         self._kernel = self._kernel.to(dtype=self._dtype, device=self._device)
 
-        self._fixed_norm_image = F.batch_norm(self._fixed_image.image, th.zeros(1), th.ones(1))
+        self._fixed_norm_image = F.batch_norm(self._fixed_image.image, th.zeros(1, device=self._device), th.ones(1, device=self._device))
         print(self._fixed_norm_image.shape)
         # covolution and pooling block 1
         self._conv_fixed_image_1 = F.conv2d(self._fixed_norm_image, self._kernel) # mean of original image
@@ -725,6 +725,7 @@ class SSIM_EXT(_PairwiseImageLoss):
         sim = luminance.pow(self._alpha) * \
             contrast.pow(self._beta) * structure.pow(self._gamma)
         value = -1.0 * th.masked_select(sim, mask)
+        print(luminance, contrast, structure, sim)
         return self.return_loss(value)
 
     def forward(self, displacement):
@@ -756,7 +757,7 @@ class SSIM_EXT(_PairwiseImageLoss):
         mask_4 = conv_mask_4 == 0
 
 
-        self._moving_norm_image = F.batch_norm(self._warped_moving_image, th.zeros(1), th.ones(1))
+        self._moving_norm_image = F.batch_norm(self._warped_moving_image, th.zeros(1, device=self._device), th.ones(1, device=self._device))
         # covolution and pooling moving image
         conv_moving_image_1 = F.conv2d(self._moving_norm_image, self._kernel)
         var_moving_image_1 = F.conv2d(self._moving_norm_image.pow(2), self._kernel) \
