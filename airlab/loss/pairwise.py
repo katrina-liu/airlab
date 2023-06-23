@@ -696,7 +696,7 @@ class SSIM_EXT(_PairwiseImageLoss):
         
         # covolution and pooling block 1
         self._conv_fixed_image_1 = F.conv2d(self._fixed_norm_image, self._kernel) # mean of original image
-        self._var_fixed_image_1 = F.conv2d(self._fixed_norm_image, self._kernel) \
+        self._var_fixed_image_1 = F.conv2d(self._fixed_norm_image.pow(2), self._kernel) \
             - (self._conv_fixed_image_1.pow(2)) # variance of original image
         self._pooled_image_1 = F.max_pool2d(self._conv_fixed_image_1, pool_kernel_size)
         self._pooled_image_1 = F.batch_norm(self._pooled_image_1, th.zeros(1, device=self._device), th.ones(1, device=self._device))
