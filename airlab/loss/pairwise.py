@@ -696,7 +696,7 @@ class SSIM_EXT(_PairwiseImageLoss):
         self._conv_fixed_image_1 = F.conv2d(self._fixed_norm_image, self._kernel) # mean of original image
         self._var_fixed_image_1 = F.conv2d(self._fixed_norm_image.pow(2), self._kernel) \
             - (self._conv_fixed_image_1.pow(2)) # variance of original image
-        self._pooled_image_1 = F.max_pool2d(self._conv_fixed_image_1, pool_kernel_size)
+        self._pooled_image_1 = F.avg_pool2d(self._conv_fixed_image_1, pool_kernel_size)
         self._pooled_image_1 = F.batch_norm(self._pooled_image_1, th.zeros(1, device=self._device), th.ones(1, device=self._device))
 
 
@@ -704,7 +704,7 @@ class SSIM_EXT(_PairwiseImageLoss):
         self._conv_fixed_image_2 = F.conv2d(self._pooled_image_1, self._kernel) # mean of pooled image 1
         self._var_fixed_image_2 = F.conv2d(self._pooled_image_1.pow(2), self._kernel) \
             - (self._conv_fixed_image_2.pow(2)) # variance of pooled image 1
-        self._pooled_image_2 = F.max_pool2d(self._conv_fixed_image_2, pool_kernel_size)
+        self._pooled_image_2 = F.avg_pool2d(self._conv_fixed_image_2, pool_kernel_size)
         self._pooled_image_2 = F.batch_norm(self._pooled_image_2, th.zeros(1, device=self._device), th.ones(1, device=self._device))
 
 
@@ -712,7 +712,7 @@ class SSIM_EXT(_PairwiseImageLoss):
         self._conv_fixed_image_3 = F.conv2d(self._pooled_image_2, self._kernel) # mean of pooled image 2
         self._var_fixed_image_3 = F.conv2d(self._pooled_image_2.pow(2), self._kernel) \
             - (self._conv_fixed_image_3.pow(2)) # variance of pooled image 2
-        self._pooled_image_3 = F.max_pool2d(self._conv_fixed_image_3, pool_kernel_size)
+        self._pooled_image_3 = F.avg_pool2d(self._conv_fixed_image_3, pool_kernel_size)
         self._pooled_image_3 = F.batch_norm(self._pooled_image_3, th.zeros(1, device=self._device), th.ones(1, device=self._device))
 
 
@@ -748,15 +748,15 @@ class SSIM_EXT(_PairwiseImageLoss):
         # mask
         conv_mask_1 = F.conv2d(mask, self._kernel) # original image ssim mask
         mask_1 = conv_mask_1 == 0
-        pooled_mask_1 = F.max_pool2d(conv_mask_1, self._pooling_kernel_size)
+        pooled_mask_1 = F.avg_pool2d(conv_mask_1, self._pooling_kernel_size)
 
         conv_mask_2 = F.conv2d(pooled_mask_1, self._kernel)
         mask_2 = conv_mask_2 == 0
-        pooled_mask_2 = F.max_pool2d(conv_mask_2, self._pooling_kernel_size)
+        pooled_mask_2 = F.avg_pool2d(conv_mask_2, self._pooling_kernel_size)
 
         conv_mask_3 = F.conv2d(pooled_mask_2, self._kernel)
         mask_3 = conv_mask_3 == 0
-        pooled_mask_3 = F.max_pool2d(conv_mask_3, self._pooling_kernel_size)
+        pooled_mask_3 = F.avg_pool2d(conv_mask_3, self._pooling_kernel_size)
 
         conv_mask_4 = F.conv2d(pooled_mask_3, self._kernel)
         mask_4 = conv_mask_4 == 0
@@ -767,21 +767,21 @@ class SSIM_EXT(_PairwiseImageLoss):
         conv_moving_image_1 = F.conv2d(self._moving_norm_image, self._kernel)
         var_moving_image_1 = F.conv2d(self._moving_norm_image.pow(2), self._kernel) \
             - (conv_moving_image_1.pow(2)) # variance of pooled image 1
-        pooled_moving_image_1 = F.max_pool2d(conv_moving_image_1, self._pooling_kernel_size)
+        pooled_moving_image_1 = F.avg_pool2d(conv_moving_image_1, self._pooling_kernel_size)
         pooled_moving_image_1 = F.batch_norm(pooled_moving_image_1, th.zeros(1, device=self._device), th.ones(1, device=self._device))
 
 
         conv_moving_image_2 = F.conv2d(pooled_moving_image_1, self._kernel)
         var_moving_image_2 = F.conv2d(pooled_moving_image_1.pow(2), self._kernel) \
             - (conv_moving_image_2.pow(2)) # variance of pooled image 2
-        pooled_moving_image_2 = F.max_pool2d(conv_moving_image_2, self._pooling_kernel_size)
+        pooled_moving_image_2 = F.avg_pool2d(conv_moving_image_2, self._pooling_kernel_size)
         pooled_moving_image_2 = F.batch_norm(pooled_moving_image_2, th.zeros(1, device=self._device), th.ones(1, device=self._device))
 
 
         conv_moving_image_3 = F.conv2d(pooled_moving_image_2, self._kernel)
         var_moving_image_3 = F.conv2d(pooled_moving_image_2.pow(2), self._kernel) \
             - (conv_moving_image_3.pow(2)) # variance of pooled image 2
-        pooled_moving_image_3 = F.max_pool2d(conv_moving_image_3, self._pooling_kernel_size)
+        pooled_moving_image_3 = F.avg_pool2d(conv_moving_image_3, self._pooling_kernel_size)
         pooled_moving_image_3 = F.batch_norm(pooled_moving_image_3, th.zeros(1, device=self._device), th.ones(1, device=self._device))
 
 
