@@ -724,13 +724,18 @@ class SSIM_EXT(_PairwiseImageLoss):
     def calc_ssim(self, im1_mean, im1_var, im2_mean, im2_var, im12_mean, mask):
         luminance = (2*im1_mean*im2_mean+self._c1) / \
             (im1_mean.pow(2)+im2_mean.pow(2)+self._c1)
-        im12_var = th.sqrt(im1_var+self._epsilon)*th.sqrt(im2_var + self._epsilon)
-        contrast = (2*im12_var+self._c2)/(im1_var+im2_var+self._c2)
+        im1_var_e = im1_var + self._epsilon
+        im1_var_e[im1_var_e<0] = 0
+        im2_var_e = im2_var + self._epsilon
+        im2_var_e[im2_var_e<0] = 0
+        im12_var = th.sqrt(im1_var_e)*th.sqrt(im2_var_e)
+        contrast = (2*im12_var+self._c2)/(im1_var_e+im2_var_e+self._c2)
         covar = im12_mean-im1_mean*im2_mean
         structure = (covar + self._c3)/(im12_var+self._c3)
         sim = luminance.pow(self._alpha) * \
             contrast.pow(self._beta) * structure.pow(self._gamma)
         value = -1.0 * th.masked_select(sim, mask)
+        
         return self.return_loss(value)
 
     def forward(self, displacement):
