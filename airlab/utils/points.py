@@ -107,8 +107,8 @@ class Points:
         df_transform.SetSmoothingOff()
 
         transformed_points = np.zeros_like(points)
-        for i in range(points.shape[0]):
-            transformed_points[i, :] = df_transform.TransformPoint(points[i, :])
+        for i in range(len(points)):
+            transformed_points[i, :] = df_transform.TransformPoint(points[i])
 
         return transformed_points
 
