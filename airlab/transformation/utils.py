@@ -134,7 +134,7 @@ def unit_displacement_to_displacement(displacement):
 
     # manipulate displacement field
     for dim in range(df.shape[-1]):
-        df[..., dim] = float(df.shape[-dim - 2] - 1) * ((df[..., dim] + 1) / 2.0)
+        df[..., dim] = float(df.shape[-dim - 2] - 1) * ((df[..., dim]) / 2.0)
 
     return displacement
 
